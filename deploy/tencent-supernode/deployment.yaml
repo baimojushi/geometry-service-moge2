@@ -16,7 +16,7 @@ spec:
       restartPolicy: Always
       initContainers:
         - name: prepare-model
-          image: your-registry.example.com/moge2-geometry-service:latest
+          image: ghcr.io/baimojushi/geometry-service-moge2:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "/app/scripts/download_model.sh"]
           env:
