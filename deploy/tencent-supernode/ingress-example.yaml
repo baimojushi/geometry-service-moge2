@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: moge2-geometry-service
+  namespace: geometry
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: moge2.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: moge2-geometry-service
+                port:
+                  number: 80

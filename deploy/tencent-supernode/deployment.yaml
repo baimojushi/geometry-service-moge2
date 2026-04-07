@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moge2-geometry-service
+  namespace: geometry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moge2-geometry-service
+  template:
+    metadata:
+      labels:
+        app: moge2-geometry-service
+    spec:
+      restartPolicy: Always
+      initContainers:
+        - name: prepare-model
+          image: your-registry.example.com/moge2-geometry-service:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/app/scripts/download_model.sh"]
+          env:
+            - name: MODEL_NAME
+              value: "Ruicheng/moge-2-vitb-normal"
+            - name: MODEL_DIR
+              value: "/models/moge2"
+            - name: HF_HOME
+              value: "/models/.hf"
+            - name: HUGGINGFACE_HUB_CACHE
+              value: "/models/.hf/hub"
+            - name: TORCH_HOME
+              value: "/models/.torch"
+          volumeMounts:
+            - name: model-cache
+              mountPath: /models
+      containers:
+        - name: app
+          image: your-registry.example.com/moge2-geometry-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: PORT
+              value: "8000"
+            - name: DEVICE
+              value: "cuda"
+            - name: MODEL_NAME
+              value: "Ruicheng/moge-2-vitb-normal"
+            - name: MODEL_DIR
+              value: "/models/moge2"
+            - name: HF_HOME
+              value: "/models/.hf"
+            - name: HUGGINGFACE_HUB_CACHE
+              value: "/models/.hf/hub"
+            - name: TORCH_HOME
+              value: "/models/.torch"
+            - name: JOBS_DIR
+              value: "/app/data/jobs"
+            - name: AUTO_DOWNLOAD_ON_START
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: model-cache
+              mountPath: /models
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: moge2-model-cache
